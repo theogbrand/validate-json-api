@@ -413,11 +413,11 @@ Update text enclosed in <>. Be concise. Output only the json string without any 
         my_system_prompt = str(system_prompt) + output_format_prompt + error_msg
         my_user_prompt = str(user_prompt) 
 
-        print("sys", my_system_prompt)
-        print("user", my_user_prompt)
+        # print("sys", my_system_prompt)
+        # print("user", my_user_prompt)
         res = chat(my_system_prompt, my_user_prompt, **kwargs)
 
-        print(res)
+        # print(res)
         
         # extract only the chunk including the opening and closing braces
         startindex = res.find('{')
@@ -482,7 +482,7 @@ def hello():
     """
    return valid_json(system_prompt = subQnPrompt,
                     user_prompt = 'How was LLAMA 3 trained?',
-                    output_format = {'Questions': 'Type of Sentiment, type: Array[str]',
+                    output_format = {'Questions': 'Five different versions of Questions generated from user question, type: Array[str]',
                                      'Questions Generated': 'Number of questions generated, type: int'
                                      }
                   )
