@@ -139,7 +139,6 @@ def check_datatype(field, key: dict, data_type: str, **kwargs):
             
     # if it is not nested, check individually
     else:
-        # check for string
         if data_type.lower() == 'str':
             try:
                 field = str(field)
@@ -148,7 +147,6 @@ def check_datatype(field, key: dict, data_type: str, **kwargs):
             if not isinstance(field, str):
                 raise Exception(f'''Output field of "{key}" not of data type {data_type}. If not possible to match, output '' ''')
                 
-        # check for int
         if data_type.lower() == 'int':
             try:
                 field = int(field)
@@ -157,7 +155,6 @@ def check_datatype(field, key: dict, data_type: str, **kwargs):
             if not isinstance(field, int):
                 raise Exception(f'Output field of "{key}" not of data type {data_type}. If not possible to match, output 0')
         
-        # check for float
         if data_type.lower() == 'float':
             try:
                 field = float(field)
@@ -166,7 +163,6 @@ def check_datatype(field, key: dict, data_type: str, **kwargs):
             if not isinstance(field, float):
                 raise Exception(f'Output field of "{key}" not of data type {data_type}. If not possible to match, output 0.0')
                 
-        # check for bool
         if data_type.lower() == 'bool':
             field = str(field)
             if 'true' == field[:4].lower():
@@ -176,7 +172,6 @@ def check_datatype(field, key: dict, data_type: str, **kwargs):
             else:
                 raise Exception(f'Output field of "{key}" not of data type {data_type}. If not possible to match, output True')
 
-        # check for dict
         if data_type[:4].lower() == 'dict':
             if not isinstance(field, dict):
                 # first try to see if we can do ast.literal_eval with { and }
@@ -294,7 +289,7 @@ def remove_unicode_escape(my_datatype):
         return my_datatype
     
 def wrap_with_angle_brackets(d: dict, delimiter: str, delimiter_num: int) -> dict:
-    ''' Changes d to output_d by wrapping delimiters over the keys, and putting angle brackets on the values 
+    ''' Modifies output_format argument passed to valid_json by wrapping delimiters (### by default) over the keys, and putting angle brackets <> on the values 
     Also changes all mention of `list` after type: to `array` for better processing '''
     if isinstance(d, dict):
         output_d = {}
@@ -309,7 +304,7 @@ def wrap_with_angle_brackets(d: dict, delimiter: str, delimiter_num: int) -> dic
         if 'type:' in d:
             type_part = d.split('type:')[1]
             original_type_part = type_part
-            type_part = re.sub(r'\blist\b', 'array', type_part)
+            type_part = re.sub(r'\blist\b', 'array', type_part) # optimised for OpenAI training data
             # replace any mention of the word list with array at the later part
             d.replace(original_type_part, type_part)
         return f'<{d}>'
@@ -317,8 +312,8 @@ def wrap_with_angle_brackets(d: dict, delimiter: str, delimiter_num: int) -> dic
         return d
     
 def call_ai(system_prompt: str, user_prompt: str, model: str = 'gpt-3.5-turbo', temperature: float = 0, verbose: bool = False, host: str = 'openai', llm = None, **kwargs):
-    '''Performs a chat with the host's LLM model with system prompt, user prompt, model, verbose and kwargs
-    Returns the output string res
+    '''Calls LLM model with system prompt, user prompt, model, verbose and kwargs
+    Returns the output string of the LLM
     - system_prompt: String. Write in whatever you want the LLM to become. e.g. "You are a \<purpose in life\>"
     - user_prompt: String. The user input. Later, when we use it as a function, this is the function input
     - model: String. The LLM model to use for json generation
@@ -334,21 +329,11 @@ def call_ai(system_prompt: str, user_prompt: str, model: str = 'gpt-3.5-turbo', 
     
     TODO: Incorporate other open-sourced LLMs in the future'''
     if llm is not None:
-        ''' If you specified your own LLM, then we just feed in the system and user prompt 
-        LLM function should take in system prompt (str) and user prompt (str), and output a response (str) '''
+        ''' Set up any LLM here. Must take in system prompt (str) and user prompt (str), and output a response (str) '''
         res = llm(system_prompt = system_prompt, user_prompt = user_prompt)
     
     ## This part here is for llms that are OpenAI based
     elif host == 'openai':
-        # additional checks for openai json mode
-        if 'response_format' in kwargs and kwargs['response_format'] == {"type": "json_object"}:
-            # if model fails, default to gpt-3.5-turbo-1106
-            try:
-                assert(model in ['gpt-4-1106-preview', 'gpt-3.5-turbo-1106'])
-            except Exception as e:
-                model = 'gpt-3.5-turbo-1106'
-                
-        # client = OpenAI()
         azure_endpoint = "https://cursor-gpt-4.openai.azure.com"
         api_version="2024-02-15-preview"
         client = AzureOpenAI(
@@ -371,7 +356,7 @@ def call_ai(system_prompt: str, user_prompt: str, model: str = 'gpt-3.5-turbo', 
     if verbose:
         print('System prompt:', system_prompt)
         print('\nUser prompt:', user_prompt)
-        print('\nGPT response:', res)
+        print('\LLM response:', res)
             
     return res
 
@@ -399,9 +384,6 @@ def valid_json(system_prompt: str, user_prompt: str, output_format: dict, custom
     Output:
     - res: Dict. The JSON output of the model. Returns {} if JSON parsing failed.
     '''
-    
-        
-    # Instead, implement JSON parsing with REGEX + LLM recovery
     error_msg = ''
 
     # wrap the values with angle brackets and wrap keys with delimiter to encourage LLM to modify it
@@ -414,11 +396,7 @@ Update text enclosed in <>. Be concise. Output only the json string without any 
         my_system_prompt = str(system_prompt) + output_format_prompt + error_msg
         my_user_prompt = str(user_prompt) 
 
-        # print("sys", my_system_prompt)
-        # print("user", my_user_prompt)
         res = call_ai(my_system_prompt, my_user_prompt, **kwargs)
-
-        # print(res)
         
         # extract only the chunk including the opening and closing braces
         startindex = res.find('{')
