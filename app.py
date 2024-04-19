@@ -15,7 +15,7 @@ def convert_to_list(field: str, **kwargs) -> list:
     
     system_msg = '''Output each element of the list in a new line starting with (%item) and ending with \n, e.g. ['hello', 'world'] -> (%item) hello\n(%item) world\nStart your response with (%item) and do not provide explanation'''
     user_msg = str(field)
-    res = chat(system_msg, user_msg, **kwargs)
+    res = call_ai(system_msg, user_msg, **kwargs)
 
     # Extract out list items
     field = re.findall(r'\(%item\)\s*(.*?)\n*(?=\(%item\)|$)', res, flags=re.DOTALL)
@@ -66,7 +66,7 @@ Output in the following format:
 Update text enclosed in <>. Be concise.
 '''
     user_msg = str(field)
-    res = chat(system_msg, user_msg, **kwargs)
+    res = call_ai(system_msg, user_msg, **kwargs)
     
     pattern = r"# Thoughts: (.+)\n# Requirement Met: (.+)\n# Action Needed: (.+)"
     matches = re.findall(pattern, res)
@@ -316,7 +316,7 @@ def wrap_with_angle_brackets(d: dict, delimiter: str, delimiter_num: int) -> dic
     else:
         return d
     
-def chat(system_prompt: str, user_prompt: str, model: str = 'gpt-3.5-turbo', temperature: float = 0, verbose: bool = False, host: str = 'openai', llm = None, **kwargs):
+def call_ai(system_prompt: str, user_prompt: str, model: str = 'gpt-3.5-turbo', temperature: float = 0, verbose: bool = False, host: str = 'openai', llm = None, **kwargs):
     '''Performs a chat with the host's LLM model with system prompt, user prompt, model, verbose and kwargs
     Returns the output string res
     - system_prompt: String. Write in whatever you want the LLM to become. e.g. "You are a \<purpose in life\>"
@@ -416,7 +416,7 @@ Update text enclosed in <>. Be concise. Output only the json string without any 
 
         # print("sys", my_system_prompt)
         # print("user", my_user_prompt)
-        res = chat(my_system_prompt, my_user_prompt, **kwargs)
+        res = call_ai(my_system_prompt, my_user_prompt, **kwargs)
 
         # print(res)
         
