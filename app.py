@@ -482,7 +482,7 @@ def hello():
     """
    return valid_json(system_prompt = subQnPrompt,
                     user_prompt = 'How was LLAMA 3 trained?',
-                    output_format = {'Questions': 'Five different versions of Questions generated from user question, type: Array[str]',
-                                     'Questions Generated': 'Number of questions generated, type: int'
+                    output_format = {'Generatd Questions': 'Five different versions of questions generated from user question, type: Array[str]',
+                                     'Total Number of Questions Generated': 'Number of Generated Questions, type: int'
                                      }
                   )
