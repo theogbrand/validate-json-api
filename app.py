@@ -5,6 +5,7 @@ from openai import AzureOpenAI
 import dotenv
 import re
 import ast
+from flask import request
 
 dotenv.load_dotenv()
 app = Flask(__name__)
@@ -453,36 +454,13 @@ Update text enclosed in <>. Be concise. Output only the json string without any 
 
     return {}
 
-@app.route('/')
-def hello():
-   subQnPrompt = """You are an AI language model assistant. Your task is to generate Five
-    different versions of the given user question to retrieve relevant documents from a vector
-    database. By generating multiple perspectives on the user question, your goal is to help
-    the user overcome some of the limitations of the distance-based similarity search.
-    Provide these alternative questions seperated by newlines only.
+@app.route('/validate', methods=['POST'])
+def valid_json():
+  data = request.get_json()
+  system_prompt = data.get('system_prompt')
+  user_prompt = data.get('user_prompt')
+  output_format = data.get('output_format')
 
-    For example:
-    User question: "What is the conclusion of the paper?"
-
-    Generated questions:
-    What is the main takeaway from the paper?
-    What are the key findings of the paper?
-    What is the summary of the paper?
-    What is the final thought of the paper?
-    What is the ending of the paper?
-    
-    Output format should be in JSON as follows:
-
-    {'Questions': ['What is the process of LLM red teaming in LLAMA 3?', 'What are the steps involved in LLM red teaming in LLAMA 3?', 'How does LLM red teaming function in LLAMA 3?', 'What is the operation of LLM red teaming in LLAMA 3?', 'What is the mechanism of LLM red teaming in LLAMA 3?'], 'Questions Generated': 5}
-
-    And not this format:
-
-    '1. What is Bill Gates known for?'
-│   "2. Can you provide information about Bill Gates' background?"
-    """
-   return valid_json(system_prompt = subQnPrompt,
-                    user_prompt = 'How was LLAMA 3 trained?',
-                    output_format = {'Generatd Questions': 'Five different versions of questions generated from user question, type: Array[str]',
-                                     'Total Number of Questions Generated': 'Number of Generated Questions, type: int'
-                                     }
-                  )
+  return valid_json(system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            output_format=output_format)
