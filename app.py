@@ -1,5 +1,4 @@
-# app.py
-from flask import Flask, render_template
+from flask import Flask
 import os
 from openai import AzureOpenAI
 import dotenv
