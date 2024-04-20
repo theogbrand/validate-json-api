@@ -6,11 +6,11 @@ def client():
   client = api.test_client()
   return client
 
-# def test_home_page(client):
-#   response = client.get('/validate')
-#   assert response.status_code == 200
+def test_api(client):
+  response = client.get('/ping')
+  assert response.status_code == 200
 
-def test_valid_json(client):
+def test_validate_json(client):
   subQnPrompt = """You are an AI language model assistant. Your task is to generate Five
     different versions of the given user question to retrieve relevant documents from a vector
     database. By generating multiple perspectives on the user question, your goal is to help
@@ -39,7 +39,7 @@ def test_valid_json(client):
     """
   
   user_prompt="What is the conclusion of the paper?",
-  output_format = {'Generatd Questions': 'Five different versions of questions generated from user question, type: Array[str]',
+  output_format = {'Generated Questions': 'Five different versions of questions generated from user question, type: Array[str]',
                                      'Total Number of Questions Generated': 'Number of Generated Questions, type: int'
                                      }
 

@@ -428,6 +428,11 @@ Update text enclosed in <>. Be concise. Output only the json string without any 
 
     return {}
 
+@api.route('/ping')
+def ping():
+  return "PONG"
+
+
 @api.route('/validate', methods=['POST'])
 def valid_json():
   data = request.get_json()
