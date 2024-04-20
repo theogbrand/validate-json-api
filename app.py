@@ -311,7 +311,7 @@ def wrap_with_angle_brackets(d: dict, delimiter: str, delimiter_num: int) -> dic
     else:
         return d
     
-def call_ai(system_prompt: str, user_prompt: str, model: str = 'gpt-3.5-turbo', temperature: float = 0, verbose: bool = False, host: str = 'openai', llm = None, **kwargs):
+def call_ai(system_prompt: str, user_prompt: str, temperature: float = 0, verbose: bool = False, host: str = 'azure-openai', llm = None, **kwargs):
     '''Calls LLM model with system prompt, user prompt, model, verbose and kwargs
     Returns the output string of the LLM
     - system_prompt: String. Write in whatever you want the LLM to become. e.g. "You are a \<purpose in life\>"
@@ -332,18 +332,14 @@ def call_ai(system_prompt: str, user_prompt: str, model: str = 'gpt-3.5-turbo', 
         ''' Set up any LLM here. Must take in system prompt (str) and user prompt (str), and output a response (str) '''
         res = llm(system_prompt = system_prompt, user_prompt = user_prompt)
     
-    ## This part here is for llms that are OpenAI based
-    elif host == 'openai':
-        azure_endpoint = "https://cursor-gpt-4.openai.azure.com"
-        api_version="2024-02-15-preview"
+    elif host == 'azure-openai':
         client = AzureOpenAI(
-        azure_endpoint=azure_endpoint,
-        api_version=api_version,
+        azure_endpoint=os.environ["AZURE_OPENAI_BASE_URL"],
+        api_version=os.environ["AZURE_OPENAI_API_VERSION"],
         api_key = os.environ["AZURE_OPENAI_API_KEY"],
         )
         response = client.chat.completions.create(
-            model="pjf-dpo-turbo-35",
-            # model="cursor-gpt-4",
+            model=os.environ["AZURE_OPENAI_MODEL_ID"],
             temperature = temperature,
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -363,7 +359,7 @@ def call_ai(system_prompt: str, user_prompt: str, model: str = 'gpt-3.5-turbo', 
 
 ### Main Function ###
                 
-def valid_json(system_prompt: str, user_prompt: str, output_format: dict, custom_checks: dict = dict(), check_data = None, delimiter: str = '###', num_tries: int = 3, openai_json_mode: bool = False, **kwargs):
+def validate_json(system_prompt: str, user_prompt: str, output_format: dict, custom_checks: dict = dict(), check_data = None, delimiter: str = '###', num_tries: int = 3, openai_json_mode: bool = False, **kwargs):
     ''' Ensures that OpenAI will always adhere to the desired output JSON format defined in output_format. 
     Uses rule-based iterative feedback to ask GPT to self-correct.
     Keeps trying up to num_tries it it does not. Returns empty JSON if unable to after num_tries iterations.
@@ -432,13 +428,43 @@ Update text enclosed in <>. Be concise. Output only the json string without any 
 
     return {}
 
-@app.route('/validate', methods=['POST'])
+# @app.route('/validate', methods=['POST'])
+@app.route('/validate')
 def valid_json():
-  data = request.get_json()
-  system_prompt = data.get('system_prompt')
-  user_prompt = data.get('user_prompt')
-  output_format = data.get('output_format')
+  # data = request.get_json()
+  # system_prompt = data.get('system_prompt')
+  # user_prompt = data.get('user_prompt')
+  # output_format = data.get('output_format')
 
-  return valid_json(system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            output_format=output_format)
+  subQnPrompt = """You are an AI language model assistant. Your task is to generate Five
+    different versions of the given user question to retrieve relevant documents from a vector
+    database. By generating multiple perspectives on the user question, your goal is to help
+    the user overcome some of the limitations of the distance-based similarity search.
+    Provide these alternative questions seperated by newlines only.
+
+    For example:
+    User question: "What is the conclusion of the paper?"
+
+    Generated questions:
+    What is the main takeaway from the paper?
+    What are the key findings of the paper?
+    What is the summary of the paper?
+    What is the final thought of the paper?
+    What is the ending of the paper?
+    
+    Output format should be as follows:
+
+    'What is Bill Gates known for?'
+│   "Can you provide information about Bill Gates' background?"
+
+    And not this format:
+
+    '1. What is Bill Gates known for?'
+│   "2. Can you provide information about Bill Gates' background?"
+    """
+
+  return validate_json(system_prompt=subQnPrompt,
+            user_prompt="What is the conclusion of the paper?",
+            output_format = {'Generatd Questions': 'Five different versions of questions generated from user question, type: Array[str]',
+                                     'Total Number of Questions Generated': 'Number of Generated Questions, type: int'
+                                     })
