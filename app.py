@@ -8,7 +8,7 @@ import ast
 from flask import request
 
 dotenv.load_dotenv()
-app = Flask(__name__)
+api = Flask(__name__)
 
 def convert_to_list(field: str, **kwargs) -> list:
     '''Converts the string field into a list using the LLM (with **kwargs) to list out elements line by line'''
@@ -429,7 +429,7 @@ Update text enclosed in <>. Be concise. Output only the json string without any 
     return {}
 
 # @app.route('/validate', methods=['POST'])
-@app.route('/validate')
+@api.route('/validate')
 def valid_json():
   # data = request.get_json()
   # system_prompt = data.get('system_prompt')
